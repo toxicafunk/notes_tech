@@ -165,6 +165,23 @@ class AppSettings @Inject constructor(private val prefs: LegacyPreferences) {
 
     fun clearVaultLostDrafts() = prefs.remove(KEY_VAULT_LOST_DRAFTS)
 
+    // ── Dossier de sauvegarde ────────────────────────────────────────────────────────────────────
+
+    /**
+     * The folder where "Create a backup" writes without asking, as the `content://` tree URI the system
+     * picker gave — or `null`: ask every time, as before.
+     *
+     * A pointer, not a permission: the permission is the system's (`persistedUriPermissions`), taken and
+     * released by `DossierDeSauvegarde`, the only writer of this value.
+     */
+    fun backupFolderNow(): String? = prefs.string(KEY_BACKUP_FOLDER)
+
+    val backupFolder: Flow<String?> = observing { backupFolderNow() }
+
+    fun setBackupFolder(treeUri: String) = prefs.putString(KEY_BACKUP_FOLDER, treeUri)
+
+    fun clearBackupFolder() = prefs.remove(KEY_BACKUP_FOLDER)
+
     /**
      * Relit [lecture] à chaque écriture dans le fichier, et n'émet que si le résultat a changé.
      *
@@ -195,5 +212,8 @@ class AppSettings @Inject constructor(private val prefs: LegacyPreferences) {
 
         /** `services/first_launch_flag.dart:16`. */
         const val KEY_SPLASH_SHOWN = "splash_shown_v1"
+
+        /** The port's own (after 3.2.2, D-036): no Flutter version knows it, none reads it. */
+        const val KEY_BACKUP_FOLDER = "backup_folder_uri"
     }
 }

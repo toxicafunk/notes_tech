@@ -344,6 +344,15 @@
     <string name="settings_section_backup">Sauvegarde chiffrée</string>
     <string name="backup_create">Créer une sauvegarde</string>
     <string name="backup_create_subtitle">Vos notes et dossiers, corbeille comprise, dans un seul fichier chiffré.</string>
+    <string name="backup_create_subtitle_folder">Vos notes et dossiers, corbeille comprise, dans un seul fichier chiffré, enregistré dans « %1$s ».</string>
+    <string name="backup_folder">Dossier de sauvegarde</string>
+    <string name="backup_folder_none">Demander à chaque fois</string>
+    <string name="backup_folder_explain">Les nouvelles sauvegardes sont enregistrées dans « %1$s » sans le demander, chacune dans un nouveau fichier. L\'application qui fournit ce dossier (Nextcloud, par exemple) l\'envoie : Notes Tech n\'a lui-même aucun accès à Internet.</string>
+    <string name="backup_folder_change">Changer</string>
+    <string name="backup_folder_forget">Oublier</string>
+    <string name="backup_folder_no_picker">Aucune application de cet appareil ne permet de choisir un dossier.</string>
+    <string name="backup_folder_error_permission">L\'application qui fournit ce dossier ne permet pas à Notes Tech d\'y garder accès. Choisissez un autre dossier.</string>
+    <string name="backup_folder_error_gone">Le dossier de sauvegarde n\'est plus accessible : son application a été supprimée ou déconnectée, ou le dossier a été supprimé. Rien n\'a été enregistré. Recommencez la sauvegarde pour choisir où l\'enregistrer.</string>
     <string name="backup_restore">Restaurer une sauvegarde</string>
     <string name="backup_restore_subtitle">Rajoute ce que contient une sauvegarde. Rien n\'est écrasé sur ce téléphone.</string>
     <string name="backup_create_panic">Le mode panique n\'atteint pas ce fichier : gardez-le en lieu sûr, et supprimez-le vous-même quand il ne sert plus.</string>

@@ -5,6 +5,8 @@ import androidx.annotation.StringRes
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.filestech.notes_tech.R
+import com.filestech.notes_tech.data.prefs.AppSettings
+import com.filestech.notes_tech.data.sauvegarde.DossierDeSauvegarde
 import com.filestech.notes_tech.data.sauvegarde.RestaurationDeSauvegarde
 import com.filestech.notes_tech.data.sauvegarde.SauvegardeChiffree
 import com.filestech.notes_tech.security.sauvegarde.FichierDeSauvegarde
@@ -13,8 +15,11 @@ import com.filestech.notes_tech.security.sauvegarde.SecretDeSauvegarde
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import timber.log.Timber
 import java.io.IOException
@@ -35,7 +40,37 @@ import javax.inject.Inject
 class SauvegardeViewModel @Inject constructor(
     private val sauvegarde: SauvegardeChiffree,
     private val restauration: RestaurationDeSauvegarde,
+    private val dossierDeSauvegarde: DossierDeSauvegarde,
+    settings: AppSettings,
 ) : ViewModel() {
+
+    /**
+     * The remembered backup folder's name, for the Settings row (D-036): `null` when backups ask where
+     * to go every time. A folder whose provider no longer answers keeps a name — its URI's last segment —
+     * until a backup finds it gone.
+     */
+    val dossier: StateFlow<String?> = settings.backupFolder
+        .map { uri -> uri?.let { dossierDeSauvegarde.nom() ?: Uri.parse(it).lastPathSegment ?: it } }
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(ABONNEMENT_MS), null)
+
+    /** The folder picker's answer — `null`: the user went back, nothing changes. */
+    fun dossierChoisi(arbre: Uri?) {
+        if (arbre == null) return
+        try {
+            dossierDeSauvegarde.retenir(arbre)
+        } catch (e: SecurityException) {
+            Timber.w(e, "dossier de sauvegarde sans permission durable")
+            _etape.value = Etape.Echec(DOSSIER, R.string.backup_folder_error_permission)
+        }
+    }
+
+    /** Back to asking where every backup goes. */
+    fun oublierLeDossier() = dossierDeSauvegarde.oublier()
+
+    /** No app on the device can pick a folder. */
+    fun sansSelecteurDeDossier() {
+        if (_etape.value == Etape.Repos) _etape.value = Etape.Echec(DOSSIER, R.string.backup_folder_no_picker)
+    }
 
     sealed interface Etape {
         data object Repos : Etape
@@ -80,12 +115,31 @@ class SauvegardeViewModel @Inject constructor(
         Etape.AvantLaCreation(sauvegarde.apercu(), SecretDeSauvegarde.nouveauCode())
     }
 
-    /** The secret is chosen: the backup is written now, held to the vaults the preview said open. */
+    /**
+     * The secret is chosen: the backup is written now, held to the vaults the preview said open — then
+     * into the remembered folder without a picker (D-036), or handed to the picker as before.
+     *
+     * The remembered path never leaves the app, so no vault locks between the preview and the writing.
+     */
     fun secretChoisi(choisi: String) {
         val ouverts = (_etape.value as? Etape.AvantLaCreation)?.apercu?.idsDesCoffresACodeOuverts ?: return fermer()
         executer(CREATION, enLecture = false) {
             preparee = sauvegarde.preparer(choisi, ouverts)
-            Etape.PreteADeposer
+            if (dossierDeSauvegarde.dossier() == null) {
+                Etape.PreteADeposer
+            } else {
+                val document = try {
+                    dossierDeSauvegarde.nouveauDocument()
+                } catch (e: DossierDeSauvegarde.DossierInaccessibleException) {
+                    // Forgotten, so that the next backup asks where to go instead of failing again.
+                    dossierDeSauvegarde.oublier()
+                    throw e
+                }
+                // Handed over as in [documentCree]: [SauvegardeChiffree.deposer] lets the waiting file go.
+                val enAttente = checkNotNull(preparee)
+                preparee = null
+                Etape.Creee(sauvegarde.deposer(enAttente, document))
+            }
         }
     }
 
@@ -179,6 +233,10 @@ class SauvegardeViewModel @Inject constructor(
                 throw e
             } catch (e: Exception) {
                 Timber.w(e, "sauvegarde chiffree")
+                // A failure after [SauvegardeChiffree.preparer] — the remembered folder gone — leaves no
+                // encrypted file waiting for a picker that will never open.
+                preparee?.let(sauvegarde::abandonner)
+                preparee = null
                 val message = messageDe(e, enLecture)
                 siLeSecretEstFaux?.takeIf { message == R.string.backup_error_wrong_secret }
                     ?: Etape.Echec(titre, message, (e as? SauvegardeChiffree.CoffreRefermeException)?.nom)
@@ -201,6 +259,10 @@ class SauvegardeViewModel @Inject constructor(
         /** The titles of the two flows: the rows the user tapped. */
         val CREATION = R.string.backup_create
         val RESTAURATION = R.string.backup_restore
+        val DOSSIER = R.string.backup_folder
+
+        /** The folder's name stays computed through a rotation. */
+        const val ABONNEMENT_MS = 5_000L
 
         @StringRes
         fun messageDe(e: Exception, enLecture: Boolean): Int = when (e) {
@@ -214,6 +276,7 @@ class SauvegardeViewModel @Inject constructor(
             is RestaurationDeSauvegarde.FichierChangeException -> R.string.backup_error_changed
             is SauvegardeChiffree.SauvegardeTropGrosseException -> R.string.backup_error_too_large
             is SauvegardeChiffree.RelectureEchoueeException -> R.string.backup_error_readback
+            is DossierDeSauvegarde.DossierInaccessibleException -> R.string.backup_folder_error_gone
             // Reading: a wrong secret and a damaged file look the same — the tag, or the content before it.
             is IOException -> if (enLecture) R.string.backup_error_wrong_secret else R.string.backup_error_generic
             else -> R.string.backup_error_generic

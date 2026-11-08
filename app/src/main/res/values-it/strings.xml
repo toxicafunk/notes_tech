@@ -339,6 +339,15 @@
     <string name="settings_section_backup">Backup cifrato</string>
     <string name="backup_create">Crea un backup</string>
     <string name="backup_create_subtitle">Le sue note e cartelle, cestino compreso, in un unico file cifrato.</string>
+    <string name="backup_create_subtitle_folder">Le sue note e cartelle, cestino compreso, in un unico file cifrato, salvato in «%1$s».</string>
+    <string name="backup_folder">Cartella dei backup</string>
+    <string name="backup_folder_none">Chiedi ogni volta</string>
+    <string name="backup_folder_explain">I nuovi backup vengono salvati in «%1$s» senza chiedere, ognuno in un nuovo file. L\'app che fornisce questa cartella (Nextcloud, per esempio) lo carica: Notes Tech non ha accesso a Internet.</string>
+    <string name="backup_folder_change">Cambia</string>
+    <string name="backup_folder_forget">Dimentica</string>
+    <string name="backup_folder_no_picker">Nessuna app su questo dispositivo permette di scegliere una cartella.</string>
+    <string name="backup_folder_error_permission">L\'app che fornisce questa cartella non permette a Notes Tech di mantenerne l\'accesso. Scelga un\'altra cartella.</string>
+    <string name="backup_folder_error_gone">La cartella dei backup non è più raggiungibile: la sua app è stata rimossa o disconnessa, oppure la cartella è stata eliminata. Non è stato salvato nulla. Ricrei il backup per scegliere dove salvarlo.</string>
     <string name="backup_restore">Ripristina un backup</string>
     <string name="backup_restore_subtitle">Aggiunge ciò che un backup contiene. Su questo telefono non viene sovrascritto nulla.</string>
     <string name="backup_create_panic">La modalità panico non raggiunge questo file: lo conservi in un luogo sicuro e lo elimini lei stesso quando non le serve più.</string>

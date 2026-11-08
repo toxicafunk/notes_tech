@@ -11,6 +11,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Backup
+import androidx.compose.material.icons.outlined.Folder
 import androidx.compose.material.icons.outlined.Restore
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.CircularProgressIndicator
@@ -64,12 +65,20 @@ internal fun LignesDeSauvegarde() {
     val creation =
         rememberAppResultLauncher(ActivityResultContracts.CreateDocument(TYPE_DU_FICHIER), viewModel::documentCree)
     val ouverture = rememberAppResultLauncher(ActivityResultContracts.OpenDocument(), viewModel::documentOuvert)
+    val choixDuDossier = rememberAppResultLauncher(ActivityResultContracts.OpenDocumentTree(), viewModel::dossierChoisi)
+    val dossier by viewModel.dossier.collectAsStateWithLifecycle()
+    var optionsDuDossier by remember { mutableStateOf(false) }
     val auRepos = etape == SauvegardeViewModel.Etape.Repos
 
     Column {
         ListItem(
             headlineContent = { Text(stringResource(R.string.backup_create)) },
-            supportingContent = { Text(stringResource(R.string.backup_create_subtitle)) },
+            supportingContent = {
+                Text(
+                    dossier?.let { stringResource(R.string.backup_create_subtitle_folder, it) }
+                        ?: stringResource(R.string.backup_create_subtitle),
+                )
+            },
             leadingContent = { Icon(Icons.Outlined.Backup, contentDescription = null) },
             colors = ListItemDefaults.colors(containerColor = Color.Transparent),
             modifier = Modifier.clickable(enabled = auRepos, onClick = viewModel::preparerLaCreation),
@@ -83,6 +92,41 @@ internal fun LignesDeSauvegarde() {
             // Any type: a `.ntbackup` has none of its own, most providers say `application/octet-stream`.
             modifier = Modifier.clickable(enabled = auRepos) {
                 if (!ouverture.launch(arrayOf("*/*"))) viewModel.sansSelecteur()
+            },
+        )
+        HorizontalDivider()
+        // D-036: where "Create a backup" writes without asking. No folder: the picker, every time.
+        ListItem(
+            headlineContent = { Text(stringResource(R.string.backup_folder)) },
+            supportingContent = { Text(dossier ?: stringResource(R.string.backup_folder_none)) },
+            leadingContent = { Icon(Icons.Outlined.Folder, contentDescription = null) },
+            colors = ListItemDefaults.colors(containerColor = Color.Transparent),
+            modifier = Modifier.clickable(enabled = auRepos) {
+                if (dossier == null) {
+                    if (!choixDuDossier.launch(null)) viewModel.sansSelecteurDeDossier()
+                } else {
+                    optionsDuDossier = true
+                }
+            },
+        )
+    }
+
+    if (optionsDuDossier) {
+        AlertDialog(
+            onDismissRequest = { optionsDuDossier = false },
+            title = { Text(stringResource(R.string.backup_folder)) },
+            text = { Text(stringResource(R.string.backup_folder_explain, dossier.orEmpty())) },
+            confirmButton = {
+                TextButton(onClick = {
+                    optionsDuDossier = false
+                    if (!choixDuDossier.launch(null)) viewModel.sansSelecteurDeDossier()
+                }) { Text(stringResource(R.string.backup_folder_change)) }
+            },
+            dismissButton = {
+                TextButton(onClick = {
+                    optionsDuDossier = false
+                    viewModel.oublierLeDossier()
+                }) { Text(stringResource(R.string.backup_folder_forget)) }
             },
         )
     }

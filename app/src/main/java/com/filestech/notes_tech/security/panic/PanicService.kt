@@ -5,6 +5,7 @@ import com.filestech.notes_tech.data.export.NoteExporter
 import com.filestech.notes_tech.data.local.DatabaseProvider
 import com.filestech.notes_tech.data.local.LegacyDatabaseLocation
 import com.filestech.notes_tech.data.prefs.LegacyPreferences
+import com.filestech.notes_tech.data.sauvegarde.DossierDeSauvegarde
 import com.filestech.notes_tech.data.voice.SttModelStore
 import com.filestech.notes_tech.data.voice.VoiceCapture
 import com.filestech.notes_tech.di.ApplicationScope
@@ -143,6 +144,18 @@ enum class PanicStep {
 
     /** `files/models/` — jusqu'à 530 Mo laissés par les versions ≤ 1.1.6 qui embarquaient une IA. */
     LEGACY_MODELS_WIPE,
+
+    /**
+     * The backup folder (D-036): its persisted permission released, the folder forgotten.
+     *
+     * ⚠️ **BEFORE [PREFS_CLEAR], and that is the whole point of its rank.** The clearing takes the
+     * folder's URI with it, and a permission whose URI the app no longer knows can never be released:
+     * the system would keep the grant for an app that no longer remembers having asked for it.
+     *
+     * It deletes nothing remote. The `.ntbackup` files already written are encrypted, and outside the
+     * app's reach by design: the backup screen says so when it writes one (`backup_create_panic`).
+     */
+    BACKUP_FOLDER_RELEASE,
 
     /** Toutes les préférences sauf deux, par liste blanche. */
     PREFS_CLEAR,
@@ -289,6 +302,7 @@ class PanicService @Inject constructor(
     private val appLockKeystore: AppLockKeystore,
     private val biometricUnlockKey: BiometricUnlockKey,
     private val journal: PanicJournal,
+    private val dossierDeSauvegarde: DossierDeSauvegarde,
 ) {
 
     private val verrou = Any()
@@ -456,6 +470,9 @@ class PanicService @Inject constructor(
         // 10. Les modèles hérités des versions qui embarquaient une IA. Après la garantie de
         //    sécurité, parce que la suppression peut prendre plusieurs secondes sur 530 Mo.
         issues += etape(PanicStep.LEGACY_MODELS_WIPE) { supprimerLeDossier(File(context.filesDir, MODELS_DIR)) }
+
+        // 10 bis. The backup folder's permission, while its URI is still in the preferences.
+        issues += etape(PanicStep.BACKUP_FOLDER_RELEASE) { dossierDeSauvegarde.oublier() }
 
         // 11. Les préférences, par liste blanche.
         issues += etape(PanicStep.PREFS_CLEAR) {

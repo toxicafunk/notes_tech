@@ -400,6 +400,15 @@
     <string name="settings_section_backup">Encrypted backup</string>
     <string name="backup_create">Create a backup</string>
     <string name="backup_create_subtitle">Your notes and folders, trash included, in one encrypted file.</string>
+    <string name="backup_create_subtitle_folder">Your notes and folders, trash included, in one encrypted file, saved to “%1$s”.</string>
+    <string name="backup_folder">Backup folder</string>
+    <string name="backup_folder_none">Ask every time</string>
+    <string name="backup_folder_explain">New backups are saved to “%1$s” without asking, each as a new file. The app that provides this folder (Nextcloud, for example) uploads it: Notes Tech itself has no internet access.</string>
+    <string name="backup_folder_change">Change</string>
+    <string name="backup_folder_forget">Forget</string>
+    <string name="backup_folder_no_picker">No app on this device can pick a folder.</string>
+    <string name="backup_folder_error_permission">The app that provides this folder does not let Notes Tech keep access to it. Choose another folder.</string>
+    <string name="backup_folder_error_gone">The backup folder can no longer be reached: its app was removed or signed out, or the folder was deleted. Nothing was saved. Create the backup again to choose where it goes.</string>
     <string name="backup_restore">Restore a backup</string>
     <string name="backup_restore_subtitle">Adds back what a backup holds. Nothing on this phone is overwritten.</string>
     <string name="backup_create_panic">Panic mode does not reach this file: keep it somewhere safe, and delete it yourself when you no longer need it.</string>

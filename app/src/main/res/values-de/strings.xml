@@ -325,6 +325,15 @@
     <string name="settings_section_backup">Verschlüsselte Sicherung</string>
     <string name="backup_create">Sicherung erstellen</string>
     <string name="backup_create_subtitle">Ihre Notizen und Ordner, Papierkorb inbegriffen, in einer einzigen verschlüsselten Datei.</string>
+    <string name="backup_create_subtitle_folder">Ihre Notizen und Ordner, Papierkorb inbegriffen, in einer einzigen verschlüsselten Datei, gespeichert in „%1$s“.</string>
+    <string name="backup_folder">Sicherungsordner</string>
+    <string name="backup_folder_none">Jedes Mal fragen</string>
+    <string name="backup_folder_explain">Neue Sicherungen werden ohne Nachfrage in „%1$s“ gespeichert, jede als neue Datei. Die App, die diesen Ordner bereitstellt (zum Beispiel Nextcloud), lädt sie hoch: Notes Tech selbst hat keinen Internetzugang.</string>
+    <string name="backup_folder_change">Ändern</string>
+    <string name="backup_folder_forget">Vergessen</string>
+    <string name="backup_folder_no_picker">Keine App auf diesem Gerät kann einen Ordner auswählen.</string>
+    <string name="backup_folder_error_permission">Die App, die diesen Ordner bereitstellt, erlaubt Notes Tech keinen dauerhaften Zugriff. Wählen Sie einen anderen Ordner.</string>
+    <string name="backup_folder_error_gone">Der Sicherungsordner ist nicht mehr erreichbar: Seine App wurde entfernt oder abgemeldet, oder der Ordner wurde gelöscht. Es wurde nichts gespeichert. Erstellen Sie die Sicherung erneut, um den Speicherort zu wählen.</string>
     <string name="backup_restore">Sicherung wiederherstellen</string>
     <string name="backup_restore_subtitle">Fügt hinzu, was eine Sicherung enthält. Auf diesem Telefon wird nichts überschrieben.</string>
     <string name="backup_create_panic">Der Panikmodus erreicht diese Datei nicht: Bewahren Sie sie sicher auf und löschen Sie sie selbst, wenn Sie sie nicht mehr brauchen.</string>

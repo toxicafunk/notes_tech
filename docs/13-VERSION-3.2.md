@@ -352,3 +352,62 @@ l'écran les deux de « Nouvelle note ». ⚠️ **Celle du ViewModel, aucun** :
 avant tout second toucher. Elle reste pour les téléphones lents, comme celles de l'import et de l'export. Suite
 instrumentée complète : 547 tests, les 12 échecs habituels de l'émulateur (Keystore logiciel, biométrie, modèle
 Whisper).
+
+### D-036 — Un dossier de sauvegarde retenu, et un outil de bureau qui lit le `.ntbackup`
+
+> Écrit le 2026-11-08, après la 3.2.2. Demande : choisir une fois où vont les sauvegardes (un dossier
+> Nextcloud, Dropbox…), puis lire les notes sur un ordinateur, en Markdown ou dans Logseq.
+
+**Pourquoi pas la base elle-même dans le nuage.** Sa clé est scellée par un Keystore non exportable
+(`KeystoreSealedKekSource`) : une copie ne s'ouvre nulle part ailleurs. Et un fichier SQLite en WAL synchronisé
+par un tiers (`.db`, `-wal`, `-shm` copiés à des instants différents) se lit comme une corruption. Le
+`.ntbackup` existe déjà, est portable (Argon2id sur un secret de l'utilisateur), et son format est écrit.
+
+**Décision, côté appli** :
+- Réglages → **Dossier de sauvegarde** : `ACTION_OPEN_DOCUMENT_TREE`, permission **persistée**
+  (`takePersistableUriPermission`), l'URI de l'arbre dans les préférences (`backup_folder_uri`). Un arbre et
+  non un document retenu : chaque sauvegarde est un **nouveau** document, `notes-tech-AAAAMMJJ-HHMMSS.ntbackup`
+  à l'heure locale — R-12 tient, rien n'est jamais écrit par-dessus une sauvegarde.
+- « Créer une sauvegarde » garde tout son déroulé (aperçu, code ou phrase saisis à chaque fois, fichier
+  chiffré puis relu dans le cache, recopié, relu par SHA-256) ; seule la destination change : le document est
+  créé dans le dossier, **sans sélecteur**. L'appli ne passe donc plus en arrière-plan entre l'aperçu et
+  l'écriture, et un coffre à code ouvert ne peut plus se refermer entre les deux.
+- **Rien de secret n'est stocké** : le secret de la sauvegarde est demandé à chaque fois, comme avant.
+- **Toujours aucune permission réseau.** L'appli écrit dans un document du fournisseur (l'appli Nextcloud) ;
+  c'est lui qui envoie. Rien n'est ajouté au manifeste.
+- Dossier injoignable (appli du fournisseur désinstallée, compte déconnecté, dossier supprimé, permission
+  perdue) : l'écran le dit, le fichier en attente est effacé, le dossier est **oublié** — la sauvegarde
+  suivante demande où aller au lieu d'échouer encore.
+- **Mode panique** : nouvelle étape `BACKUP_FOLDER_RELEASE`, juste **avant** `PREFS_CLEAR` (qui emporte l'URI
+  sans laquelle la permission ne se relâche plus). Elle ne supprime rien à distance : les `.ntbackup` déjà
+  écrits sont chiffrés, et hors de portée par construction (`backup_create_panic` le dit déjà).
+- ⚠️ **Fournisseurs** : le fournisseur de l'appli Nextcloud accepte le choix d'un dossier ; celui de Dropbox
+  n'a pas toujours accepté `OPEN_DOCUMENT_TREE`. À défaut, un dossier local synchronisé par une appli de
+  synchronisation fonctionne toujours. À mesurer sur appareil avant de le promettre.
+
+**Décision, côté bureau** : `tools/ntbackup`, en Rust, dans ce dépôt — le format et son lecteur changent
+ensemble.
+- `inspect` (en-tête seul), `decrypt` (le JSON), `export` (un `.md` par note, frontmatter identique à
+  l'export de l'appli, dossiers **imbriqués**), `export --logseq` (pages d'un graphe Logseq existant).
+- Les coffres à phrase s'ouvrent avec leur phrase, **sans normalisation** (comme `VaultCrypto`) ; le secret de
+  la sauvegarde, lui, en NFC ou forme canonique du code (comme `SecretDeSauvegarde`). Les coffres à code
+  sauvegardés ouverts voyagent avec leur clé.
+- `--logseq` : page = titre de la note (les `[[liens]]` de l'appli et leurs rétroliens marchent) ; le dossier en
+  propriété `folder:: [[A/B]]` ; cases à cocher → `TODO`/`DONE` hors des blocs de code. Synchronisation **à
+  sens unique** portée par deux propriétés, `ntbackup-id::` et `ntbackup-hash::` : seules ces pages sont
+  réécrites, renommées ou supprimées ; une page modifiée dans Logseq est laissée telle quelle (sauf
+  `--overwrite-edited`) ; les pages des coffres non ouverts cette fois-ci sont gardées.
+
+**Preuve** :
+- `tools/ntbackup` : 48 tests (`cargo test`), clippy `-D warnings`, `cargo fmt --check`. Les vecteurs de
+  parité des coffres (`app/src/test/resources/parite/`, produits en exécutant le Dart, recoupés C et OpenSSL)
+  sont **relus en place** par le Rust : Argon2id, AES-GCM, vérificateur et enveloppes concordent octet pour
+  octet. Le reste du format (en-tête, JSON) est écrit d'après le code Kotlin et vérifié par des sauvegardes
+  fabriquées dans les tests. Dans l'autre sens, `FichierEcritParNtbackupTest` fait lire par le code de l'appli
+  (`FichierDeSauvegarde`, `SecretDeSauvegarde`) un `.ntbackup` écrit par l'outil.
+- Appli : `SauvegardeViewModelTest` (dossier retenu → écrit sans sélecteur ; dossier disparu → dit, oublié,
+  rien en attente ; pas de dossier → sélecteur), `PanicReportTest.sequenceFigee` mis à jour.
+- ⚠️ **Pas encore fait** : la passerelle Gradle et la suite instrumentée n'ont pas tourné sur la machine où ce
+  lot a été écrit (ni JDK ni émulateur) ; aucune sauvegarde **écrite par l'appli** n'a encore été lue par
+  `ntbackup`. À faire avant de fusionner : la passerelle, puis sur appareil un dossier Nextcloud choisi, une
+  sauvegarde, et `ntbackup export` / `--logseq` sur le fichier reçu.

@@ -145,6 +145,8 @@ class PanicReportTest {
             PanicStep.DB_WIPE,
             PanicStep.VOICE_MODEL_WIPE,
             PanicStep.LEGACY_MODELS_WIPE,
+            // D-036: BEFORE the preferences, which hold the URI it needs to release the permission.
+            PanicStep.BACKUP_FOLDER_RELEASE,
             PanicStep.PREFS_CLEAR,
             PanicStep.CACHE_PURGE,
         ).inOrder()

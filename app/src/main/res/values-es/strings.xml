@@ -339,6 +339,15 @@
     <string name="settings_section_backup">Copia de seguridad cifrada</string>
     <string name="backup_create">Crear una copia de seguridad</string>
     <string name="backup_create_subtitle">Sus notas y carpetas, papelera incluida, en un solo archivo cifrado.</string>
+    <string name="backup_create_subtitle_folder">Sus notas y carpetas, papelera incluida, en un solo archivo cifrado, guardado en «%1$s».</string>
+    <string name="backup_folder">Carpeta de copias de seguridad</string>
+    <string name="backup_folder_none">Preguntar cada vez</string>
+    <string name="backup_folder_explain">Las nuevas copias de seguridad se guardan en «%1$s» sin preguntar, cada una en un archivo nuevo. La aplicación que proporciona esta carpeta (Nextcloud, por ejemplo) la sube: Notes Tech no tiene acceso a Internet.</string>
+    <string name="backup_folder_change">Cambiar</string>
+    <string name="backup_folder_forget">Olvidar</string>
+    <string name="backup_folder_no_picker">Ninguna aplicación de este dispositivo permite elegir una carpeta.</string>
+    <string name="backup_folder_error_permission">La aplicación que proporciona esta carpeta no permite que Notes Tech conserve el acceso. Elija otra carpeta.</string>
+    <string name="backup_folder_error_gone">La carpeta de copias de seguridad ya no está accesible: su aplicación se eliminó o cerró sesión, o la carpeta se borró. No se ha guardado nada. Vuelva a crear la copia para elegir dónde guardarla.</string>
     <string name="backup_restore">Restaurar una copia de seguridad</string>
     <string name="backup_restore_subtitle">Añade lo que contiene una copia. No se sobrescribe nada en este teléfono.</string>
     <string name="backup_create_panic">El modo pánico no alcanza este archivo: guárdelo en un lugar seguro y bórrelo usted mismo cuando ya no lo necesite.</string>
