@@ -46,3 +46,22 @@ updates:
       interval: monthly
     labels:
       - dependencies
+
+  # The desktop decoder of .ntbackup files (tools/ntbackup). Its crypto crates matter as much as the
+  # app's: a backup is only as readable as the tool that reads it.
+  - package-ecosystem: cargo
+    directory: "/tools/ntbackup"
+    schedule:
+      interval: weekly
+      day: monday
+    open-pull-requests-limit: 5
+    labels:
+      - dependencies
+    groups:
+      rustcrypto:
+        patterns:
+          - "aes-gcm"
+          - "argon2"
+          - "hmac"
+          - "sha2"
+          - "subtle"
